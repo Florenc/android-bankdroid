@@ -37,6 +37,26 @@ public class CookieParser {
         public String domain;
         public String sessionId;
         public boolean secure;
+        
+        public static Cookie parseFields(Cookie cookie, String[] fields) {
+       	 // Parse each field
+           for (int j = 1; j < fields.length; j++) {
+               if ("secure".equalsIgnoreCase(fields[j])) {
+                   cookie.secure = true;
+               } else if (fields[j].indexOf('=') > 0) {
+                   String[] f = fields[j].split("=");
+                   if ("expires".equalsIgnoreCase(f[0])) {
+                       cookie.expires = f[1];
+                   } else if ("domain".equalsIgnoreCase(f[0])) {
+                       cookie.domain = f[1];
+                   } else if ("path".equalsIgnoreCase(f[0])) {
+                       cookie.path = f[1];
+                   }
+               }
+           }
+           return cookie;
+       }
+        
     }
 
     /**
@@ -65,22 +85,8 @@ public class CookieParser {
             result.sessionId = result.value.substring(11);
         }
 
-        // Parse each field
-        for (int j = 1; j < fields.length; j++) {
-            if ("secure".equalsIgnoreCase(fields[j])) {
-                result.secure = true;
-            } else if (fields[j].indexOf('=') > 0) {
-                String[] f = fields[j].split("=");
-                if ("expires".equalsIgnoreCase(f[0])) {
-                    result.expires = f[1];
-                } else if ("domain".equalsIgnoreCase(f[0])) {
-                    result.domain = f[1];
-                } else if ("path".equalsIgnoreCase(f[0])) {
-                    result.path = f[1];
-                }
-            }
-        }
-        return result;
+        return Cookie.parseFields(result,fields);
     }
+
 
 }

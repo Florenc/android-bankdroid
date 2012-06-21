@@ -362,79 +362,79 @@ public class BankFactory {
 		return banks;
 	}
 	
-	public static Account accountFromDb(Context context, String accountId, boolean loadTransactions) {
-		DBAdapter db = new DBAdapter(context);
-		db.open();
-		Cursor c = db.getAccount(accountId);
+	public static Account accountFromDb(Context context, String accountId, boolean shouldLoadTransactions) {
+		DBAdapter dbAdapter = new DBAdapter(context);
+		dbAdapter.open();
+		Cursor cursor = dbAdapter.getAccount(accountId);
        
-		if (c == null || c.isClosed() || (c.isBeforeFirst() && c.isAfterLast())) {
-			db.close();
+		if (cursor == null || cursor.isClosed() || (cursor.isBeforeFirst() && cursor.isAfterLast())) {
+			dbAdapter.close();
 			return null;
 		}
 
-		Account account = new Account(c.getString(c.getColumnIndex("name")),
-                                      new BigDecimal(c.getString(c.getColumnIndex("balance"))),
-                                      c.getString(c.getColumnIndex("id")).split("_", 2)[1],
-                                      c.getLong(c.getColumnIndex("bankid")),
-                                      c.getInt(c.getColumnIndex("acctype")));
-        account.setHidden(c.getInt(c.getColumnIndex("hidden")) == 1 ? true : false);
-        account.setNotify(c.getInt(c.getColumnIndex("notify")) == 1 ? true : false);
-        account.setCurrency(c.getString(c.getColumnIndex("currency")));
-        account.setAliasfor(c.getString(c.getColumnIndex("aliasfor")));
-		c.close();
-		if (loadTransactions) {
+		Account account = new Account(cursor.getString(cursor.getColumnIndex("name")),
+                                      new BigDecimal(cursor.getString(cursor.getColumnIndex("balance"))),
+                                      cursor.getString(cursor.getColumnIndex("id")).split("_", 2)[1],
+                                      cursor.getLong(cursor.getColumnIndex("bankid")),
+                                      cursor.getInt(cursor.getColumnIndex("acctype")));
+        account.setHidden(cursor.getInt(cursor.getColumnIndex("hidden")) == 1 ? true : false);
+        account.setNotify(cursor.getInt(cursor.getColumnIndex("notify")) == 1 ? true : false);
+        account.setCurrency(cursor.getString(cursor.getColumnIndex("currency")));
+        account.setAliasfor(cursor.getString(cursor.getColumnIndex("aliasfor")));
+		cursor.close();
+		if (shouldLoadTransactions) {
 			ArrayList<Transaction> transactions = new ArrayList<Transaction>();
 			String fromAccount = accountId;
 			if (account.getAliasfor() != null && account.getAliasfor().length() > 0) {
 			    fromAccount = Long.toString(account.getBankDbId()) + "_" + account.getAliasfor();
 			}
-			c = db.fetchTransactions(fromAccount);
-			if (!(c == null || c.isClosed() || (c.isBeforeFirst() && c.isAfterLast()))) {
-				while (!c.isLast() && !c.isAfterLast()) {
-					c.moveToNext();
-					transactions.add(new Transaction(c.getString(c.getColumnIndex("transdate")),
-                                     c.getString(c.getColumnIndex("btransaction")),
-                                     new BigDecimal(c.getString(c.getColumnIndex("amount"))),
-                                     c.getString(c.getColumnIndex("currency"))));
+			cursor = dbAdapter.fetchTransactions(fromAccount);
+			if (!(cursor == null || cursor.isClosed() || (cursor.isBeforeFirst() && cursor.isAfterLast()))) {
+				while (!cursor.isLast() && !cursor.isAfterLast()) {
+					cursor.moveToNext();
+					transactions.add(new Transaction(cursor.getString(cursor.getColumnIndex("transdate")),
+                                     cursor.getString(cursor.getColumnIndex("btransaction")),
+                                     new BigDecimal(cursor.getString(cursor.getColumnIndex("amount"))),
+                                     cursor.getString(cursor.getColumnIndex("currency"))));
 				}
-				c.close();
+				cursor.close();
 			}
 			account.setTransactions(transactions);
 		}
 		
-		db.close();
+		dbAdapter.close();
 		return account;
 	}
 	
 	public static ArrayList<Account> accountsFromDb(Context context, long bankId) {
 		ArrayList<Account> accounts = new ArrayList<Account>();
-		DBAdapter db = new DBAdapter(context);
-		db.open();
-		Cursor c = db.fetchAccounts(bankId);
-		if (c == null) {
-			db.close();
+		DBAdapter dbAdapter = new DBAdapter(context);
+		dbAdapter.open();
+		Cursor cursor = dbAdapter.fetchAccounts(bankId);
+		if (cursor == null) {
+			dbAdapter.close();
 			return accounts;
 		}
-		while (!c.isLast() && !c.isAfterLast()) {
-			c.moveToNext();
+		while (!cursor.isLast() && !cursor.isAfterLast()) {
+			cursor.moveToNext();
 			try {
-    			Account account = new Account(c.getString(c.getColumnIndex("name")),
-                                              new BigDecimal(c.getString(c.getColumnIndex("balance"))),
-                                              c.getString(c.getColumnIndex("id")).split("_", 2)[1],
-                                              c.getLong(c.getColumnIndex("bankid")),
-                                              c.getInt(c.getColumnIndex("acctype")));
-    	        account.setHidden(c.getInt(c.getColumnIndex("hidden")) == 1 ? true : false);
-    	        account.setNotify(c.getInt(c.getColumnIndex("notify")) == 1 ? true : false);			
-                account.setCurrency(c.getString(c.getColumnIndex("currency")));
-                account.setAliasfor(c.getString(c.getColumnIndex("aliasfor")));
+    			Account account = new Account(cursor.getString(cursor.getColumnIndex("name")),
+                                              new BigDecimal(cursor.getString(cursor.getColumnIndex("balance"))),
+                                              cursor.getString(cursor.getColumnIndex("id")).split("_", 2)[1],
+                                              cursor.getLong(cursor.getColumnIndex("bankid")),
+                                              cursor.getInt(cursor.getColumnIndex("acctype")));
+    	        account.setHidden(cursor.getInt(cursor.getColumnIndex("hidden")) == 1 ? true : false);
+    	        account.setNotify(cursor.getInt(cursor.getColumnIndex("notify")) == 1 ? true : false);			
+                account.setCurrency(cursor.getString(cursor.getColumnIndex("currency")));
+                account.setAliasfor(cursor.getString(cursor.getColumnIndex("aliasfor")));
     			accounts.add(account);
 			}
 			catch (ArrayIndexOutOfBoundsException e) {
 			    // Attempted to load an account without and ID, probably an old Avanza account.
 			}
 		}
-		c.close();
-		db.close();
+		cursor.close();
+		dbAdapter.close();
 		return accounts;
 	}
 	
